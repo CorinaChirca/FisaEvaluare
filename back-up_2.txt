@@ -1,0 +1,356 @@
+import { DenumireTabele } from './../_models/denumiretabele';
+import { DenumireCampuri } from './../_models/denumirecampuri';
+import { Guid } from 'guid-typescript';
+import { Angajat } from './../_models/angajat';
+import { AngajatService } from './../_services/angajat.service';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { Manager } from '../_models/Manager';
+import { Form, FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import {StepperSelectionEvent, STEPPER_GLOBAL_OPTIONS} from '@angular/cdk/stepper';
+import { Note } from '../_models/note';
+import { MatStepper } from '@angular/material/stepper';
+
+
+@Component({
+  selector: 'app-nav',
+  templateUrl: './nav.component.html',
+  styleUrls: ['./nav.component.css'],
+  providers: [
+    {
+      provide: STEPPER_GLOBAL_OPTIONS,
+      useValue: {showError: true},
+    },
+  ],
+})
+
+export class NavComponent implements OnInit {
+  //@ViewChild('stepper',{read:MatStepper}) stepper:MatStepper;
+  @ViewChild("stepper", { static: false }) stepper: MatStepper;
+  
+  AngajatiList: Angajat[];
+  ManageriList: Manager[];
+  Manager: Manager;
+  DenumireCampuriList: DenumireCampuri[];
+  //denumire campuri dupa id(productivitate, comunicare, leadership, dezvoltare_personala)
+  DenumireCampuri: DenumireCampuri[];
+  DenumireTabeleList: DenumireTabele[];
+  NoteList: Note[];
+
+  dataSource: any[];
+  //clickedRows = new Set<ProductivitateTable>();
+  nr_linii_tabela: number;
+  selected = [];
+  i: number;
+  contor: number = 0;
+  //Departament : string;
+
+  //daca vreau sa apara spinner in timp ce se load-uieste ceva
+  isLoading = false;
+  step1Complete = false;
+  step2Complete = false;
+
+  public fisaEvalForm: FormGroup;
+
+  public firstForm: FormGroup;
+  public secondForm: FormGroup;
+  public thirdForm: FormGroup;
+  public fourthForm: FormGroup;
+
+  public firstFormLoading: boolean = false;
+  typeOfDenumireDetaliiFormGroup = new Array<FormGroup>();
+
+  nowDate = new Date(); 
+  maxDate = new Date(this.nowDate.getFullYear(),this.nowDate.getMonth(),this.nowDate.getDate());
+
+  //denumire alias coloane tabela productivitate
+  //displayedColumns: string[] = ['Denumire', 'Incadrare'];
+  displayedColumns: string[] = ['denumireProd','notaObtinuta'];
+
+  /*
+  productivitate_nota : string[] = ['1 - trebuie imbunatatit',
+                                  '2 - indeplineste un minim de cerinte',
+                                  '3 - conform cerintelor',
+                                  '4 - peste asteptari',
+                                  '5 - exceptional'
+                              ];
+*/
+  constructor(public angajatService: AngajatService, private router: Router, private fb: FormBuilder) { 
+  }
+
+  ngOnInit(): void {
+    this.fisaEvalFormGroup();
+    //this.firstFormGroup();
+    this.loadManageriList();
+    this.loadDenumireCampuriList();
+    this.loadNoteList();
+  }
+  
+  public fisaEvalFormGroup() {
+    this.fisaEvalForm = new FormGroup({
+      managerNg : new FormControl('', Validators.compose([Validators.required, Validators.minLength(3)])),
+      angajatNg : new FormControl('', Validators.compose([Validators.required, Validators.minLength(3)])),
+      functieNg : new FormControl('',Validators.compose([
+        Validators.required, 
+        Validators.minLength(3), 
+        Validators.maxLength(100),
+        Validators.pattern('^[a-zA-Z ]*')
+        ])),
+      departamentNg : new FormControl('', Validators.compose([
+        Validators.required, 
+        Validators.minLength(2), 
+        Validators.maxLength(100),
+        Validators.pattern('^[a-zA-Z ]*')
+        ])),
+      startDate: new FormControl(),
+      endDate: new FormControl('', Validators.required),
+      // email: new FormControl('', Validators.compose([
+      //   Validators.required,
+      //   Validators.pattern('^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+.[a-zA-Z0-9-.]+$')
+      // ]))
+    });
+  }
+
+  public firstFormGroup() {
+    this.firstForm = this.fb.group({
+      denumireDetalii: this.fb.array(this.typeOfDenumireDetalii())
+      //notaNg: this.fb.control('', Validators.required)
+      //noteDetalii: this.fb.array(this.typeOfNoteDetalii())
+    });
+  }
+
+  public typeOfDenumireDetalii(): Array<FormGroup> {
+    //var typeOfDenumireDetaliiFormGroup = new Array<FormGroup>();
+
+    this.DenumireCampuri.forEach(element => { 
+      this.typeOfDenumireDetaliiFormGroup.push(this.fb.group({
+        denumireNg: [element.denumire_campuri, Validators.required],
+        notaNg: ['', Validators.required]
+      }))
+    });
+    
+    return this.typeOfDenumireDetaliiFormGroup;
+  }
+
+  /*
+
+    public typeOfDenumireDetalii(): Array<FormGroup> {
+    //var typeOfDenumireDetaliiFormGroup = new Array<FormGroup>();
+
+    this.DenumireCampuriList.forEach(element => { 
+      this.typeOfDenumireDetaliiFormGroup.push(this.fb.group({
+        denumireNg: [element.denumire_campuri, Validators.required],
+        notaNg: ['', Validators.required]
+      }))
+    });
+    
+    return this.typeOfDenumireDetaliiFormGroup;
+  }
+  */
+/*
+  public typeOfNoteDetalii(): Array<FormGroup> {
+    var typeOfNoteDetaliiFormGroup = new Array<FormGroup>();
+
+    typeOfNoteDetaliiFormGroup.push(this.fb.group({
+        notaNg: ['', Validators.required]
+      }));
+    
+    return typeOfNoteDetaliiFormGroup;
+  }
+*/
+  //rowsnotaNg: FormArray = this.fb.array([]);
+
+  /*
+  public firstFormGroup() {
+    this.firstForm = new FormGroup({
+      denumireProdNg : new FormControl(''),
+      notaNg : new FormControl('', Validators.required)// new FormArray([]) //this.fb.array([]) //un array de note
+      //notaNg: new FormControl('', Validators.required)
+    });
+  }*/
+
+/*
+  firstForm = this.fb.group({
+    denumireDetalii: this.fb.array(this.typeOfDenumireDetalii())
+  });
+  
+
+  public typeOfDenumireDetalii(): Array<FormControl>{
+    var typeOfDenumireDetaliiFormGroup = new Array<FormControl>();
+
+    
+    this.DenumireCampuriList.forEach(element => {
+      typeOfDenumireDetaliiFormGroup.push(this.fb.control({
+        denumireProdNg: [element.denumire_campuri, [Validators.required]]
+      }))
+    });
+
+    return typeOfDenumireDetaliiFormGroup;
+    
+  }
+
+  */
+  
+  loadManageriList(){
+    this.angajatService.getManageriList().subscribe(data => {
+      this.ManageriList = data;
+    });
+  }
+  
+  loadAngajatiList(managerId: Guid){
+    this.isLoading = true; 
+    this.ManageriList.forEach(c => 
+      { 
+        if(c.managerId == managerId) 
+        {
+          //setez valoarea campului Departament din form cu departamentul preluat din baza
+          this.fisaEvalForm.patchValue({
+            departamentNg: c.departament,
+            angajatNg: '',
+          });
+        }
+      });
+    //load-uiesc lista angajatilor managerului selectat
+    this.angajatService.getAngajatiList(managerId).subscribe(data => {
+      this.AngajatiList = data;
+      this.isLoading = false; 
+    });
+  }
+
+  //load-uiesc in ProductivitateList denumirile coloanelor din DenumireCampuriTemplate
+  loadDenumireCampuriList()
+  {
+    this.angajatService.getDenumireCampuriList().subscribe(data => {
+        this.DenumireCampuriList = data;
+        //this.dataSource = this.DenumireCampuriList;
+        this.nr_linii_tabela = this.DenumireCampuriList.length;
+        //this.selected[this.nr_linii_tabela] =[];
+        this.loadNoteList();
+        this.firstFormGroup();
+        this.firstFormLoading = true;
+        this.dataSource = this.firstForm.get('denumireDetalii')['controls'];
+      });  
+  }
+  
+  /*
+  loadDenumireCampuriList()
+  {
+    this.angajatService.getDenumireTabeleList().subscribe(data => {
+        this.DenumireTabeleList.forEach(tabela => {
+          this.loadDenumireCampuri(tabela.id);
+          console.log(this.DenumireCampuri);
+          this.firstFormGroup();
+          this.firstFormLoading = true;
+          this.dataSource = this.firstForm.get('denumireDetalii')['controls'];
+
+        })
+      });  
+  }
+*/
+  loadDenumireCampuri(id: Guid) {
+    this.angajatService.getDenumireCampuri(id).subscribe(data => {
+      this.DenumireCampuri = data;
+    });
+  }
+
+  loadNoteList()
+  {
+    this.angajatService.getNoteList().subscribe(data => {
+      this.NoteList = data;
+    });
+  }
+  /*
+  addNotaNg(notaNgHTML: HTMLInputElement){
+    (this.firstForm.get('notaNg') as FormArray).push(new FormControl(notaNgHTML.value));
+    notaNgHTML.value='';
+  }
+
+  addNotaNg(event: Event){
+    this.firstForm.get('notaNg') = event.target as HTMLSelectElement).value));
+
+  }
+
+  addNotaNg(topicForm: FormControl){
+    this.firstForm.controls["notaNg"] as FormArray;
+    this.firstForm.get('notaNg').push()(index);
+      
+  update(e){
+    this.selected[rowIdx] = e.target.value;
+  }
+  }
+
+
+  addnotaNg(notaNgHTML: HTMLInputElement) {
+    let index = (this.firstForm.get("notaNg") as FormArray).controls.indexOf(notaNgHTML);
+    (this.firstForm.controls["notaNg"] as FormArray).insert(notaNgIndex, new FormControl(notaNgHTML.value));
+  }
+*/
+
+  //fiecare nota selectata o salveaza intr-un array
+  alegeNota(nota: any, idx: number) {
+    //this.selected[idx] = nota;
+    //console.log(this.selected[idx]);
+    //this.form.controls['nameOfTheField'].setValue(theValue);
+    //this.typeOfDenumireDetaliiFormGroup.values();
+    //this.firstForm.get('denumireDetalii').value[idx].notaNg = nota.value.notaNg;
+
+    console.log(nota);
+  }
+
+  clickedRow(row, idx) {
+    //console.log(row.id, this.selected[idx].nota); //row.id
+  }
+
+  onClick(nota) {
+    return nota.value.denumireNg;
+  }
+
+  //daca form-ul este valid atunci sa imi refresh-uiasca si sa scoata erorile de pe campuri
+  refresh(f: FormGroup) {
+    //console.log(f.value);
+    if(f.valid)
+    {
+      f.reset();
+
+      Object.keys(f.controls).forEach(key => {
+        f.get(key).setErrors(null) ;
+      });
+    }
+  }
+
+  save(f: FormGroup) {
+    document.forms[1].reset();    //sa reseteze formu-ul de pe pozitia 1 din document(care este firstForm primul fiind fisaEval)
+    
+    //this.refresh(this.firstForm);
+    console.log(document.forms[0]);
+
+  }
+
+  toggleStep1Complete() {
+    this.step1Complete = !this.step1Complete;
+  }
+  toggleStep2Complete() {
+    this.step2Complete = !this.step2Complete;
+  }
+
+  onStepChange(event: StepperSelectionEvent) {
+    console.log(event.selectedIndex);
+
+    //console.log(event.selectedStep.label);
+    //let stepIndex = event.selectedIndex;
+  }
+  
+
+  submit(){
+    
+    
+    //console.log(this.fisaEvalForm.controls.angajatNg.value);
+    //console.log(this.fisaEvalForm.controls.departamentNg.errors);
+    //console.log(this.fisaEvalForm.valid);
+
+    //daca form-ul este valid atunci sa imi refresh-uiasca si sa scoata erorile de pe campuri
+    this.refresh(this.fisaEvalForm);
+    //resetez lista de angajati
+    this.AngajatiList = [];
+  }
+}

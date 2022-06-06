@@ -1,0 +1,13 @@
+[
+    {
+      "ManagerId": 1,
+      "ManagerNume": "Anca Coltan",
+      "Departament": "Petrom",
+      "Angajati": [
+        {
+          "AngajatId": 1,
+          "AngajatNume": "Simona Iacob"
+        }
+      ]
+    }
+]

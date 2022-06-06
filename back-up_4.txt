@@ -1,0 +1,207 @@
+<!--
+    <a class="navbar-brand" routerLink="/" routerLinkActive="active">Dating App</a>
+    <ul class="navbar-nav mr-auto"> 
+      <li class="nav-item">
+        <a class="nav-link" routerLink="/members" routerLinkActive="active">Match</a>
+      </li>
+      <li class="navitem">
+        <a class="nav-link" routerLink="/lists" routerLinkActive="active">Lists</a>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" routerLink="/messages" routerLinkActive="active">Messages</a>
+      </li>
+    </ul>
+    <div class="dropdown" >
+      <a class="dropdown-toggle text-light" dropdownToggle>Welcome user</a>
+      <div class="dropdown-menu mt-3" *dropdownMenu>
+        <a class="dropdown-item">Edit Profile</a>
+        <div class="dropdown-divider"></div>
+        <a class="dropdown-item" (click)="logout()">Logout</a>
+      </div>
+    </div>
+    -->
+<!--(currentUser$ | async) === null verific daca nu exista currentUser$-->
+<div class="row">
+  <div class="col-sm-4">
+    <mat-card class="my-card">
+      <mat-card-title>Detalii Angajat</mat-card-title>
+      <mat-card-content>
+        <form [formGroup]="fisaEvalForm" class="was-validated" (ngSubmit)="this.submit(this.fisaEvalForm)">
+          <mat-form-field appearance="fill">
+            <mat-label>Selecteaza manager</mat-label>
+            <mat-select matNativeControl formControlName="managerNg" required>
+              <mat-option *ngFor="let manager of ManageriList" (click)="loadAngajatiList(manager.managerId)" [value]="manager.managerId">
+                {{manager.managerNume}}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="this.fisaEvalForm.get('managerNg').hasError('required')">Completeaza campul</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Selecteaza angajat</mat-label>
+            <mat-select matNativeControl formControlName="angajatNg" required>
+              <mat-option *ngFor="let angajat of AngajatiList" [value]="angajat.angajatId">
+                {{angajat.angajatNume}}
+              </mat-option>
+            </mat-select>
+            <mat-error *ngIf="this.fisaEvalForm.get('angajatNg').hasError('required')">Completeaza campul</mat-error> 
+            <mat-error *ngIf="this.atins_select_manager == false ">Completeaza campul manager</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Selecteaza departament</mat-label>
+            <input matInput matNativeControl formControlName="departamentNg" required>
+            <mat-error *ngIf="this.fisaEvalForm.get('departamentNg').hasError('required')">Completeaza campul</mat-error>
+            <mat-error *ngIf="this.atins_select_manager == false ">Completeaza campul manager</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Selecteaza functia</mat-label>
+            <input matInput matNativeControl formControlName="functieNg" required>
+            <mat-error *ngIf="this.fisaEvalForm.get('functieNg').hasError('required')">Completeaza campul</mat-error>
+            <mat-error *ngIf="this.fisaEvalForm.get('functieNg').hasError('pattern')">Campul trebuie sa contina doar caractere</mat-error>
+            <mat-error *ngIf="this.fisaEvalForm.get('functieNg').hasError('minlength')">Campul trebuie sa contina cel putin 2 caractere</mat-error>
+          </mat-form-field>
+
+          <mat-form-field appearance="fill">
+            <mat-label>Selecteaza perioada</mat-label>
+            <mat-date-range-input [rangePicker]="picker" [max]="maxDate" >
+              <input matStartDate placeholder="Start date" formControlName="startDate" required>
+              <input matEndDate placeholder="End date" formControlName="endDate" required>
+            </mat-date-range-input >
+            <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-date-range-picker #picker></mat-date-range-picker>
+            <mat-error *ngIf="this.fisaEvalForm.get('startDate').hasError('required') || this.fisaEvalForm.get('endDate').hasError('required')">Completeaza campul</mat-error>
+          </mat-form-field>
+
+          <button class="btn btn-primary" type="submit">Login</button>
+        </form>
+      </mat-card-content> 
+    </mat-card>  
+  </div>
+</div>
+
+
+<mat-stepper #stepper [linear]="true" ><!-- [linear]="true" daca nu vreau sa treaca la urmatorul step pana nu e completat cel curent
+(selectionChange)="onStepChange($event)"-->
+  <mat-step [stepControl]="firstForm" errorMessage="Completeaza campul incadrare">
+    <form *ngIf="firstFormLoading" [formGroup]="firstForm" class="was-validated" (ngSubmit)="this.save(this.firstForm)">
+      <ng-template matStepLabel>Productivitate</ng-template>
+        
+      <mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+        <ng-container matColumnDef="denumireProd">
+          <th mat-header-cell *matHeaderCellDef> Denumire </th>
+          <div formArrayName="denumireDetalii">
+            <td mat-cell *matCellDef="let item of this.firstForm.get('denumireDetalii')['controls']; let i = index;" [formGroupName]="i">
+              <mat-form-field appearance="fill">
+                <input matInput formControlName="denumireNg" >
+                  <div *ngFor="let item of this.firstForm.get('denumireDetalii')['controls'][i]">{{item.get('denumireNg').value}}
+                </div>
+              </mat-form-field>
+            </td>
+          </div>
+        </ng-container>
+
+        <ng-container matColumnDef="notaObtinuta">
+          <th mat-header-cell *matHeaderCellDef> Incadrare </th>
+          <div formArrayName="denumireDetalii">
+            <td mat-cell *matCellDef="let notita of NoteList; let i = index" [formGroupName]="i">
+              <mat-form-field appearance="fill">
+                <mat-label>Alege nota</mat-label> 
+                  <mat-select matNativeControl formControlName="notaNg" (selectionChange)='alegeNota(this.firstForm.value["denumireDetalii"][i], i)' required>
+                    <mat-option *ngFor="let notita of NoteList" [value]="notita.nota">{{ notita.nota }}</mat-option>
+                  </mat-select>
+                  <mat-error *ngIf="this.firstForm.value['denumireDetalii'][i].notaNg">Completeaza campul</mat-error>
+              </mat-form-field>
+            </td>
+          </div>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row (click)="onClick(row)" *matRowDef="let row; columns: displayedColumns; let i = index"></tr>
+            
+      </mat-table>
+<!--
+      <button (click)="toggleStep1Complete()" mat-flat-button color="primary">
+        {{ step1Complete === true ? "Toggle:Complete" : "Toggle:Incomplete"}}
+      </button>
+-->
+      <button class="btn btn-primary" type="submit">Save</button>
+      <div>
+        <button mat-button matStepperNext>Next</button>
+      </div>
+    </form>
+  </mat-step>
+
+  <mat-step [stepControl]="secondForm">
+    <form [formGroup]="secondForm" class="was-validated">
+      <ng-template matStepLabel>Comunicare</ng-template>
+        
+      <div>
+        <button mat-button matStepperPrevious>Back</button>
+        <button mat-button matStepperNext>Next</button>
+      </div>
+    </form>
+  </mat-step>
+
+  <mat-step [stepControl]="thirdForm">
+    <form [formGroup]="thirdForm">
+      <ng-template matStepLabel>Leadership</ng-template>
+      <div>
+        <button mat-button matStepperPrevious>Back</button>
+        <button mat-button matStepperNext>Next</button>
+      </div>
+    </form>
+  </mat-step>
+
+  <mat-step>
+    <ng-template matStepLabel>Done</ng-template>
+    <div>
+      <button mat-button (click)="stepper.reset()">Reset</button>
+    </div>
+  </mat-step>
+</mat-stepper>
+          <!--  this.firstForm.value["denumireDetalii"][i]["notaNg"].nota
+                         <mat-error *ngIf="this.firstForm.get('notaNg').hasError('required')"></mat-error>de la George
+          <div formArrayName="denumireDetalii">
+            <div *ngFor="let item of firstForm.get('denumireDetalii')['controls']; let i = index">
+              <mat-step [label]="item.get('denumireProdNg').value" [formGroupName]="i">
+                <label>{{item.get('denumireProdNg').value}}</label>
+              </mat-step>
+            </div>
+          </div>
+          -->
+<!--
+          <mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+            <ng-container matColumnDef="denumireProd">
+              <th mat-header-cell *matHeaderCellDef> Denumire </th>
+              <td mat-cell *matCellDef="let den" [value]="den"> {{ den.denumire }} </td>
+            </ng-container> dataSource.indexOf(den)
+          
+            
+            <ng-container matColumnDef="denumireProd">
+              <th mat-header-cell *matHeaderCellDef> Denumire </th>
+              <td mat-cell *matCellDef="let den" [value]="den"> {{ den.denumire }} </td>
+            </ng-container>  
+
+            <ng-container matColumnDef="notaObtinuta">
+              <th mat-header-cell *matHeaderCellDef> Incadrare </th>
+              <td mat-cell *matCellDef="let nota of NoteList; index as i">
+                <mat-form-field appearance="fill">
+                  <mat-label>Alege nota</mat-label>
+                  <mat-select formControlName="notaNg" (selectionChange)='alegeNota(this.firstForm.get("notaNg").value, i)' required>
+                    <mat-option *ngFor="let nota of NoteList" [value]="nota">{{ nota.nota }}{{row}}</mat-option>
+                  </mat-select>
+                  
+                </mat-form-field>
+              </td>
+            </ng-container>
+            
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns; index as i"></tr>
+            
+          </mat-table>
+-->
+          <!--<mat-error *ngIf="clickedRows.size!=this.nr_linii_tabela">dsfaesdfa</mat-error>   (keyup.enter)="addNotaNg(notaNg)"-->
+
+

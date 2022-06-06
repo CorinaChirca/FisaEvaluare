@@ -1,0 +1,104 @@
+firstForm = this.fb.group({
+    denumireDetalii: this.fb.array(this.typeOfDenumireDetalii())
+  });
+  
+
+  public typeOfDenumireDetalii() {
+    var typeOfDenumireDetaliiFormGroup = new Array<FormControl>();
+
+    this.DenumireCampuriList.forEach(element => {
+      typeOfDenumireDetaliiFormGroup.push(this.fb.control({
+        denumireProdNg: [element.denumire_campuri, [Validators.required]]
+      }))
+    });
+    
+    return typeOfDenumireDetaliiFormGroup;
+  }
+
+
+<mat-stepper #stepper>
+              <mat-step [stepControl]="firstForm" errorMessage="Completeaza campul incadrare">
+                <form [formGroup]="firstForm" class="was-validated" >
+                  <ng-template matStepLabel>Productivitate</ng-template>
+                  
+                  <mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                    <ng-container matColumnDef="denumireProd">
+                      <th mat-header-cell *matHeaderCellDef> Denumire </th>
+                      <div formArrayName="denumireDetalii">
+                        <div *ngFor="let item of firstForm.get('denumireDetalii')['controls']; let i = index">
+                          <mat-form-field appearance="fill">
+                              <td mat-cell *matCellDef="item.get('denumireProdNg').value" formControlName="i">
+                                {{item.get('denumireProdNg').value}}
+                              </td>
+                          </mat-form-field>
+                        </div>
+                      </div>
+                    </ng-container>
+                  </mat-table>
+                  <!-- de la George
+                  <div formArrayName="denumireDetalii">
+                    <div *ngFor="let item of firstForm.get('denumireDetalii')['controls']; let i = index">
+                      <mat-step [label]="item.get('denumireProdNg').value" [formGroupName]="i">
+                        <label>{{item.get('denumireProdNg').value}}</label>
+                      </mat-step>
+                    </div>
+                  </div>
+                  -->
+<!--
+                  <mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+                    <ng-container matColumnDef="denumireProd">
+                      <th mat-header-cell *matHeaderCellDef> Denumire </th>
+                      <td mat-cell *matCellDef="let den" [value]="den"> {{ den.denumire }} </td>
+                    </ng-container> dataSource.indexOf(den)
+                  
+                    
+                    <ng-container matColumnDef="denumireProd">
+                      <th mat-header-cell *matHeaderCellDef> Denumire </th>
+                      <td mat-cell *matCellDef="let den" [value]="den"> {{ den.denumire }} </td>
+                    </ng-container>  
+
+                    <ng-container matColumnDef="notaObtinuta">
+                      <th mat-header-cell *matHeaderCellDef> Incadrare </th>
+                      <td mat-cell *matCellDef="let nota of NoteList; index as i">
+                        <mat-form-field appearance="fill">
+                          <mat-label>Alege nota</mat-label>
+                          <mat-select formControlName="notaNg" (selectionChange)='alegeNota(this.firstForm.get("notaNg").value, i)' required>
+                            <mat-option *ngFor="let nota of NoteList" [value]="nota">{{ nota.nota }}{{row}}</mat-option>
+                          </mat-select>
+                          
+                        </mat-form-field>
+                      </td>
+                    </ng-container>
+                    
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns; index as i"></tr>
+                    
+                  </mat-table>
+-->
+                  <!--<mat-error *ngIf="clickedRows.size!=this.nr_linii_tabela">dsfaesdfa</mat-error>   (keyup.enter)="addNotaNg(notaNg)"-->
+                  <div>
+                    <button mat-button (click)="this.save()">Back</button>
+                    <button mat-button matStepperNext>Next</button>
+                  </div>
+                </form>
+              </mat-step>
+
+              <mat-step [stepControl]="secondForm">
+                <form [formGroup]="secondForm">
+                  <ng-template matStepLabel>Comunicare</ng-template>
+                </form>
+              </mat-step>
+
+              <mat-step [stepControl]="thirdForm">
+                <form [formGroup]="thirdForm">
+                  <ng-template matStepLabel>Leadership</ng-template>
+                </form>
+              </mat-step>
+
+              <mat-step>
+                <ng-template matStepLabel>Done</ng-template>
+                <div>
+                  <button mat-button (click)="stepper.reset()">Reset</button>
+                </div>
+              </mat-step>
+            </mat-stepper>
